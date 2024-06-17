@@ -90,6 +90,11 @@ extern int ff_isom_write_av1c(AVIOContext *pb, const uint8_t *buf, int size,
     
     [self reinitializeDisplayLayer];
     
+    // Disable safe area insets for the StreamView
+    if (@available(iOS 11.0, *)) {
+        _view.insetsLayoutMarginsFromSafeArea = NO;
+    }
+    
     return self;
 }
 
