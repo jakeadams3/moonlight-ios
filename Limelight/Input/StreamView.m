@@ -322,16 +322,28 @@ static const double X1_MOUSE_SPEED_DIVISOR = 2.5;
     for (UITouch *touch in touches) {
         CGPoint touchLocation = [touch locationInView:self];
         CGSize videoSize = [self getVideoAreaSize];
+        
+        // Calculate the scaling factor
+        CGFloat scaleFactorX = self.bounds.size.width / videoSize.width;
+        CGFloat scaleFactorY = self.bounds.size.height / videoSize.height;
+        CGFloat scaleFactor = MAX(scaleFactorX, scaleFactorY);
+        
+        // Scale down the videoSize
+        videoSize.width *= scaleFactor;
+        videoSize.height *= scaleFactor;
+        
+        // Calculate the scaled videoOrigin
         CGPoint videoOrigin = CGPointMake(self.bounds.size.width / 2 - videoSize.width / 2,
                                           self.bounds.size.height / 2 - videoSize.height / 2);
 
         // Check if the touch is within the video area
         if (CGRectContainsPoint(CGRectMake(videoOrigin.x, videoOrigin.y, videoSize.width, videoSize.height), touchLocation)) {
             // Convert the touch location to relative coordinates within the video area
-            CGPoint relativeLocation = CGPointMake(touchLocation.x - videoOrigin.x, touchLocation.y - videoOrigin.y);
+            CGPoint relativeLocation = CGPointMake((touchLocation.x - videoOrigin.x) * scaleFactor,
+                                                   (touchLocation.y - videoOrigin.y) * scaleFactor);
 
             // Send the relative coordinates and video dimensions to the host
-            LiSendMousePositionEvent(relativeLocation.x, relativeLocation.y, videoSize.width, videoSize.height);
+            LiSendMousePositionEvent(relativeLocation.x, relativeLocation.y, videoSize.width * scaleFactor, videoSize.height * scaleFactor);
             LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT);
         }
     }
@@ -536,16 +548,28 @@ static const double X1_MOUSE_SPEED_DIVISOR = 2.5;
     for (UITouch *touch in touches) {
         CGPoint touchLocation = [touch locationInView:self];
         CGSize videoSize = [self getVideoAreaSize];
+        
+        // Calculate the scaling factor
+        CGFloat scaleFactorX = self.bounds.size.width / videoSize.width;
+        CGFloat scaleFactorY = self.bounds.size.height / videoSize.height;
+        CGFloat scaleFactor = MAX(scaleFactorX, scaleFactorY);
+        
+        // Scale down the videoSize
+        videoSize.width *= scaleFactor;
+        videoSize.height *= scaleFactor;
+        
+        // Calculate the scaled videoOrigin
         CGPoint videoOrigin = CGPointMake(self.bounds.size.width / 2 - videoSize.width / 2,
                                           self.bounds.size.height / 2 - videoSize.height / 2);
 
         // Check if the touch is within the video area
         if (CGRectContainsPoint(CGRectMake(videoOrigin.x, videoOrigin.y, videoSize.width, videoSize.height), touchLocation)) {
             // Convert the touch location to relative coordinates within the video area
-            CGPoint relativeLocation = CGPointMake(touchLocation.x - videoOrigin.x, touchLocation.y - videoOrigin.y);
+            CGPoint relativeLocation = CGPointMake((touchLocation.x - videoOrigin.x) * scaleFactor,
+                                                   (touchLocation.y - videoOrigin.y) * scaleFactor);
 
             // Send the relative coordinates and video dimensions to the host
-            LiSendMousePositionEvent(relativeLocation.x, relativeLocation.y, videoSize.width, videoSize.height);
+            LiSendMousePositionEvent(relativeLocation.x, relativeLocation.y, videoSize.width * scaleFactor, videoSize.height * scaleFactor);
             LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
         }
     }

@@ -44,20 +44,24 @@ extern int ff_isom_write_av1c(AVIOContext *pb, const uint8_t *buf, int size,
     displayLayer = [[AVSampleBufferDisplayLayer alloc] init];
     displayLayer.backgroundColor = [UIColor blackColor].CGColor;
     
-    // Ensure the AVSampleBufferDisplayLayer is sized to preserve the aspect ratio
-    // of the video stream. We used to use AVLayerVideoGravityResizeAspect, but that
-    // respects the PAR encoded in the SPS which causes our computed video-relative
-    // touch location to be wrong in StreamView if the aspect ratio of the host
-    // desktop doesn't match the aspect ratio of the stream.
+    // Calculate the video size to fill the entire length of the screen vertically
     CGSize videoSize;
     if (_view.bounds.size.width > _view.bounds.size.height * _streamAspectRatio) {
         videoSize = CGSizeMake(_view.bounds.size.height * _streamAspectRatio, _view.bounds.size.height);
     } else {
         videoSize = CGSizeMake(_view.bounds.size.width, _view.bounds.size.width / _streamAspectRatio);
     }
+    
+    // Scale the video to fill the entire length of the screen vertically
+    CGFloat scaleFactorX = _view.bounds.size.width / videoSize.width;
+    CGFloat scaleFactorY = _view.bounds.size.height / videoSize.height;
+    CGFloat scaleFactor = MAX(scaleFactorX, scaleFactorY);
+    videoSize.width *= scaleFactor;
+    videoSize.height *= scaleFactor;
+    
     displayLayer.position = CGPointMake(CGRectGetMidX(_view.bounds), CGRectGetMidY(_view.bounds));
     displayLayer.bounds = CGRectMake(0, 0, videoSize.width, videoSize.height);
-    displayLayer.videoGravity = AVLayerVideoGravityResize;
+    displayLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
 
     // Hide the layer until we get an IDR frame. This ensures we
     // can see the loading progress label as the stream is starting.
