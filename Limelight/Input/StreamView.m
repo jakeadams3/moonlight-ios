@@ -335,16 +335,27 @@ static const double X1_MOUSE_SPEED_DIVISOR = 2.5;
         // Calculate the scaled videoOrigin
         CGPoint videoOrigin = CGPointMake(self.bounds.size.width / 2 - videoSize.width / 2,
                                           self.bounds.size.height / 2 - videoSize.height / 2);
-
+        
         // Check if the touch is within the video area
         if (CGRectContainsPoint(CGRectMake(videoOrigin.x, videoOrigin.y, videoSize.width, videoSize.height), touchLocation)) {
             // Convert the touch location to relative coordinates within the video area
             CGPoint relativeLocation = CGPointMake((touchLocation.x - videoOrigin.x) * scaleFactor,
                                                    (touchLocation.y - videoOrigin.y) * scaleFactor);
-
+            
             // Send the relative coordinates and video dimensions to the host
             LiSendMousePositionEvent(relativeLocation.x, relativeLocation.y, videoSize.width * scaleFactor, videoSize.height * scaleFactor);
             LiSendMouseButtonEvent(BUTTON_ACTION_PRESS, BUTTON_LEFT);
+        }
+    }
+    
+    // Add the sendStylusEvent functionality
+    if (@available(iOS 13.4, *)) {
+        for (UITouch *touch in touches) {
+            if (touch.type == UITouchTypePencil) {
+                if ([self sendStylusEvent:touch]) {
+                    return;
+                }
+            }
         }
     }
 }
@@ -493,7 +504,8 @@ static const double X1_MOUSE_SPEED_DIVISOR = 2.5;
             // don't require this, but we do it anyway for them too.
             // Cursor movement without a button held down is handled
             // in pointerInteraction:regionForRequest:defaultRegion.
-            [self updateCursorLocation:[touch locationInView:self] isMouse:YES];
+            CGPoint touchLocation = [self adjustCoordinatesForVideoArea:[touch locationInView:self]];
+            [self updateCursorLocation:touchLocation isMouse:YES];
             return;
         }
     }
@@ -502,6 +514,29 @@ static const double X1_MOUSE_SPEED_DIVISOR = 2.5;
     hasUserInteracted = YES;
     
     if (![onScreenControls handleTouchMovedEvent:touches]) {
+        UITouch* touch = [touches anyObject];
+        CGPoint touchLocation = [touch locationInView:self];
+        CGSize videoSize = [self getVideoAreaSize];
+        
+        // Calculate the scaling factor
+        CGFloat scaleFactorX = self.bounds.size.width / videoSize.width;
+        CGFloat scaleFactorY = self.bounds.size.height / videoSize.height;
+        CGFloat scaleFactor = MAX(scaleFactorX, scaleFactorY);
+        
+        // Scale down the videoSize
+        videoSize.width *= scaleFactor;
+        videoSize.height *= scaleFactor;
+        
+        // Calculate the scaled videoOrigin
+        CGPoint videoOrigin = CGPointMake(self.bounds.size.width / 2 - videoSize.width / 2,
+                                          self.bounds.size.height / 2 - videoSize.height / 2);
+        
+            // Convert the touch location to relative coordinates within the video area
+            CGPoint relativeLocation = CGPointMake((touchLocation.x - videoOrigin.x) * scaleFactor,
+                                                   (touchLocation.y - videoOrigin.y) * scaleFactor);
+            
+            // Send the relative coordinates and video dimensions to the host
+            LiSendMousePositionEvent(relativeLocation.x, relativeLocation.y, videoSize.width * scaleFactor, videoSize.height * scaleFactor);
         [touchHandler touchesMoved:touches withEvent:event];
     }
 }
@@ -561,16 +596,27 @@ static const double X1_MOUSE_SPEED_DIVISOR = 2.5;
         // Calculate the scaled videoOrigin
         CGPoint videoOrigin = CGPointMake(self.bounds.size.width / 2 - videoSize.width / 2,
                                           self.bounds.size.height / 2 - videoSize.height / 2);
-
+        
         // Check if the touch is within the video area
         if (CGRectContainsPoint(CGRectMake(videoOrigin.x, videoOrigin.y, videoSize.width, videoSize.height), touchLocation)) {
             // Convert the touch location to relative coordinates within the video area
             CGPoint relativeLocation = CGPointMake((touchLocation.x - videoOrigin.x) * scaleFactor,
                                                    (touchLocation.y - videoOrigin.y) * scaleFactor);
-
+            
             // Send the relative coordinates and video dimensions to the host
             LiSendMousePositionEvent(relativeLocation.x, relativeLocation.y, videoSize.width * scaleFactor, videoSize.height * scaleFactor);
             LiSendMouseButtonEvent(BUTTON_ACTION_RELEASE, BUTTON_LEFT);
+        }
+    }
+    
+    // Add the sendStylusEvent functionality
+    if (@available(iOS 13.4, *)) {
+        for (UITouch *touch in touches) {
+            if (touch.type == UITouchTypePencil) {
+                if ([self sendStylusEvent:touch]) {
+                    return;
+                }
+            }
         }
     }
 }
